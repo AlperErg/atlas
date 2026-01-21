@@ -9,6 +9,7 @@ import '../PopUps/edit/edit_map.dart';
 import '../Widgets/icon_button.dart';
 import '../Widgets/dropdown_menu.dart';
 import '../Widgets/title_header.dart';
+import '../Widgets/zoom_slider.dart';
 
 
 class UserMapPage extends StatefulWidget {
@@ -399,6 +400,19 @@ class _UserMapPageState extends State<UserMapPage> with TickerProviderStateMixin
                 icon: Icons.edit,
                 onPressed: _handleLabelEdit,
                 buttonSize: 70,
+              ),
+            ),
+
+            // Zoom Slider
+            Positioned(
+              top: 50,
+              left: 8,
+              child: ZoomSliderWidget(
+                currentZoom: _currentZoom,
+                onZoomChanged: (newZoom) {
+                  setState(() => _currentZoom = newZoom);
+                  _mapViewerKey.currentState?.setZoom(newZoom);
+                },
               ),
             ),
 

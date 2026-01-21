@@ -11,6 +11,7 @@ class HomePage extends StatefulWidget {
   final String userId;
   final void Function(List<String>)? onCaptureBubbles;
   final void Function(List<String>)? onCapturePostIds;
+  final void Function(double)? onZoomChanged;
 
   const HomePage({
     super.key, 
@@ -18,6 +19,7 @@ class HomePage extends StatefulWidget {
     required this.userId,
     this.onCaptureBubbles,
     this.onCapturePostIds,
+    this.onZoomChanged,
   });
 
   @override
@@ -198,6 +200,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   List<String> getLabelNames() => List.from(labelNames);
 
+  double getCurrentZoom() => _currentZoom;
+
+  void setZoom(double zoomLevel) {
+    _mapViewerKey.currentState?.setZoom(zoomLevel);
+  }
+
   void _captureVisibleBubbles() {
     final mapViewerState = _mapViewerKey.currentState;
     if (mapViewerState == null) return;
@@ -270,6 +278,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   : 'assets/background_light.png',
               onZoomChanged: (z) {
                 setState(() => _currentZoom = z);
+                widget.onZoomChanged?.call(z);
               },
               mapObjects: [
                 SizedBox(

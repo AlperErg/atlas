@@ -6,6 +6,7 @@ import '../PopUps/map_menu_popup.dart';
 import '../Widgets/icon_button.dart';
 import '../Widgets/profile_header.dart';
 import '../Widgets/dropdown_menu.dart';
+import '../Widgets/zoom_slider.dart';
 import '../PopUps/dropdown_popups/edit_profile.dart';
 import '../PopUps/dropdown_popups/settings.dart';
 import '../PopUps/edit/edit_map.dart';
@@ -178,6 +179,9 @@ class _HomeTabState extends State<HomeTab> {
           userId: userId,
           onCaptureBubbles: widget.onCaptureBubbles,
           onCapturePostIds: _handleCapturePostIds,
+          onZoomChanged: (_) {
+            setState(() {});
+          },
         ),
 
         // Filter button
@@ -265,6 +269,19 @@ class _HomeTabState extends State<HomeTab> {
                 ),
               ),
             ]),
+          ),
+        ),
+
+        // Zoom Slider
+        Positioned(
+          top: 200,
+          right: 8,
+          child: ZoomSliderWidget(
+            currentZoom: _homePageKey.currentState?.getCurrentZoom() ?? 1.0,
+            onZoomChanged: (newZoom) {
+              _homePageKey.currentState?.setZoom(newZoom);
+              setState(() {}); // Trigger rebuild to update slider display
+            },
           ),
         ),
       ],

@@ -103,6 +103,20 @@ class TiledMapViewerState extends State<TiledMapViewer> with SingleTickerProvide
   }
 
 
+  /// Sets the zoom level programmatically while keeping map centered
+  void setZoom(double zoomLevel) {
+    final size = MediaQuery.of(context).size;
+    final mapSize = widget.tileSize * widget.visibleTiles;
+
+    final offsetX = (size.width - mapSize) / 2;
+    final offsetY = (size.height - mapSize) / 2;
+
+    _controller.value = Matrix4.identity()
+      ..translate(offsetX + mapSize / 2, offsetY + mapSize / 2)
+      ..scale(zoomLevel)
+      ..translate(-mapSize / 2, -mapSize / 2);
+  }
+
   /// Returns visible map region in map-space
   Rect getVisibleBounds() {
     final size = MediaQuery.of(context).size;
