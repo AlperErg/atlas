@@ -145,7 +145,7 @@ class _GroupsTabState extends State<GroupsTab> {
 
         // Name plate
         Positioned(
-          top: 10,
+          top: 50,
           left: 8,
           child: ProfileHeaderWidget(
             key: _profileHeaderKey,
@@ -196,7 +196,7 @@ class _GroupsTabState extends State<GroupsTab> {
           ),
         ),
         Positioned(
-          top: 10,
+          top: 50,
           right: 8,
           child: IconButtonWidget(
             icon: Icons.menu,

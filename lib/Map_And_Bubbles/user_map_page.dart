@@ -347,7 +347,7 @@ class _UserMapPageState extends State<UserMapPage> with TickerProviderStateMixin
 
             // Header with user name and back button
             Positioned(
-              top: 10,
+              top: 50,
               left: 8,
               right: 8,
               child: Row(
@@ -405,8 +405,8 @@ class _UserMapPageState extends State<UserMapPage> with TickerProviderStateMixin
 
             // Zoom Slider
             Positioned(
-              top: 50,
-              left: 8,
+              top: 200,
+              right: 8,
               child: ZoomSliderWidget(
                 currentZoom: _currentZoom,
                 onZoomChanged: (newZoom) {

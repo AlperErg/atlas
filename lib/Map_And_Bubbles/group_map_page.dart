@@ -363,9 +363,8 @@ class _GroupMapPageState extends State<GroupMapPage> with TickerProviderStateMix
 
             // Header with group name and back button
             Positioned(
-              top: 10,
+              top: 50,
               left: 8,
-              right: 8,
               child: Row(
                 children: [
                   TitleHeaderWidget(
@@ -428,8 +427,8 @@ class _GroupMapPageState extends State<GroupMapPage> with TickerProviderStateMix
 
             // Zoom Slider
             Positioned(
-              top: 50,
-              left: 8,
+              top: 200,
+              right: 8,
               child: ZoomSliderWidget(
                 currentZoom: _currentZoom,
                 onZoomChanged: (newZoom) {

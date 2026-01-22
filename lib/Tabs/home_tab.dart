@@ -241,7 +241,7 @@ class _HomeTabState extends State<HomeTab> {
 
         // Name plate
         Positioned(
-          top: 10,
+          top: 50,
           left: 8,
           child: ProfileHeaderWidget(
             key: _profileHeaderKey,

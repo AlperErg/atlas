@@ -4,12 +4,18 @@ class ZoomSliderWidget extends StatefulWidget {
   final double currentZoom;
   final void Function(double) onZoomChanged;
   final String? label;
+  final double sliderLength; // 👈 Easy to change slider length
+  final double iconMinSize;  // 👈 Easy to change min icon size
+  final double iconMaxSize;  // 👈 Easy to change max icon size
 
   const ZoomSliderWidget({
     super.key,
     required this.currentZoom,
     required this.onZoomChanged,
     this.label = 'Zoom',
+    this.sliderLength = 450, // Default length
+    this.iconMinSize = 20,   // Default min size
+    this.iconMaxSize = 40,   // Default max size
   });
 
   @override
@@ -21,30 +27,26 @@ class _ZoomSliderWidgetState extends State<ZoomSliderWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-
-    final activeColor = ZoomSliderConfig.getTextColor(brightness).withOpacity(
-              isInteracting ? 0.3 : 0.0,);
-    final inactiveColor =
-        ZoomSliderConfig.getTextColor(brightness).withOpacity(
-              isInteracting ? 0.3 : 0.0, // 👈 invisible unless interacting
-            );
+    // Icon color: grey when not interacting, black when interacting
+    final iconColor = isInteracting ? Colors.black : Colors.grey;
 
     return SizedBox(
-      height: 260,
+      height: widget.sliderLength, // Use configurable length
       width: 48,
       child: RotatedBox(
         quarterTurns: 3,
         child: SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 3,
-            thumbShape: const ScalingIconThumb(
+            thumbShape: ScalingIconThumb(
               icon: Icons.zoom_in,
+              minSize: widget.iconMinSize, // Use configurable min size
+              maxSize: widget.iconMaxSize, // Use configurable max size
             ),
             overlayShape: SliderComponentShape.noOverlay,
-            thumbColor: activeColor,
-            activeTrackColor: activeColor,
-            inactiveTrackColor: inactiveColor,
+            thumbColor: iconColor, // Grey or black based on interaction
+            activeTrackColor: Colors.transparent, // 👈 Always invisible
+            inactiveTrackColor: Colors.transparent, // 👈 Always invisible
           ),
           child: Slider(
             value: widget.currentZoom,
@@ -97,8 +99,7 @@ class ScalingIconThumb extends SliderComponentShape {
   }) {
     final canvas = context.canvas;
 
-    final iconSize =
-        minSize + (maxSize - minSize) * value;
+    final iconSize = minSize + (maxSize - minSize) * value;
 
     final painter = TextPainter(
       text: TextSpan(
@@ -170,4 +171,3 @@ class ZoomSliderConfig {
     return '${zoom.toStringAsFixed(2)}x';
   }
 }
-
