@@ -113,30 +113,39 @@ class _MapMenuPopUpContentState extends State<MapMenuPopUpContent> {
               shape: BoxShape.circle,
             ),
           ),
-          Text(
-            '@$_username',
-            style: TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold
-            )
+          Flexible(
+            child: Text(
+              '@$_username',
+              style: const TextStyle(
+                fontSize: 35,
+                fontWeight: FontWeight.bold
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '#$_userID',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold
-                )
-              ),
-              IconButton(
-                iconSize: 15,
-                color: const Color.fromARGB(255, 133, 133, 133),
-                icon: const Icon(Icons.copy),
-                onPressed: () => _copyToClipboard(_userID),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '#$_userID',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                IconButton(
+                  iconSize: 15,
+                  color: const Color.fromARGB(255, 133, 133, 133),
+                  icon: const Icon(Icons.copy),
+                  onPressed: () => _copyToClipboard(_userID),
+                ),
+              ],
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

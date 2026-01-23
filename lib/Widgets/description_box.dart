@@ -36,8 +36,8 @@ class LabeledBox extends StatelessWidget {
 
           child: Container(
             decoration: BoxDecoration(
-              color: finalBgColor,          // inside box color
-              borderRadius: BorderRadius.circular(7), // slightly smaller radius
+              color: finalBgColor,
+              borderRadius: BorderRadius.circular(7),
             ),
 
             padding: const EdgeInsets.only(

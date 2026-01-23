@@ -64,18 +64,26 @@ class ProfileHeaderWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  header,
-                  style: TextStyle(
-                    fontSize: headerFontSize,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    header,
+                    style: TextStyle(
+                      fontSize: headerFontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
-                  subheading,
-                  style: TextStyle(
-                    fontSize: subheadingFontSize,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    subheading,
+                    style: TextStyle(
+                      fontSize: subheadingFontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

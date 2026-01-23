@@ -27,11 +27,15 @@ class CompetitionPopUpContent extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
-          Text(
-            compTitle,
-            style: const TextStyle(
-              fontSize: 35,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              compTitle,
+              style: const TextStyle(
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
@@ -48,11 +52,15 @@ class CompetitionPopUpContent extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          Text(
-            'By: @$autherName',
-            style: const TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              'By: @$autherName',
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
@@ -132,11 +140,16 @@ class _InfoColumn extends StatelessWidget {
             );
           },
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],

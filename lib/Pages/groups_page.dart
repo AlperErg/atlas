@@ -241,10 +241,14 @@ class _GroupsPageState extends State<GroupsPage> {
                   color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  '$memberCount members',
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                Expanded(
+                  child: Text(
+                    '$memberCount members',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -258,23 +262,30 @@ class _GroupsPageState extends State<GroupsPage> {
                   color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  '$postCount posts',
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                Expanded(
+                  child: Text(
+                    '$postCount posts',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
             const Spacer(),
-            Text(
-              'By: $createdBy',
-              style: TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+            Flexible(
+              child: Text(
+                'By: $createdBy',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
