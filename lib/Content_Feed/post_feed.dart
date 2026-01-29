@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:video_player/video_player.dart';
 import '../Widgets/description_box.dart';
 import '../PopUps/map_menu_popup.dart';
 import '../Widgets/profile_header.dart';
@@ -195,6 +196,7 @@ class _FeedPageState extends State<PostFeedPage> {
     int commentsCount = data['commentsCount'] ?? 0;
     List<dynamic> tags = data['tags'] ?? [];
     List<dynamic> imageUrls = data['imageUrls'] ?? [];
+    String? videoUrl = data['videoUrl']; // Get video URL if it exists
     Timestamp? createdAt = data['createdAt'];
     String dateString = createdAt != null
         ? _formatDate(createdAt.toDate())
@@ -238,8 +240,16 @@ class _FeedPageState extends State<PostFeedPage> {
             ),
           ),
           
-          // Image section with dynamic height
-          _buildImageSection(imageUrls),
+          // Media section - handles both images and videos
+          if (videoUrl != null && videoUrl.isNotEmpty)
+            // Display video if one exists
+            _buildVideoSection(videoUrl)
+          else if (imageUrls.isNotEmpty)
+            // Display images if no video, but images exist
+            _buildImageSection(imageUrls)
+          else
+            // Display placeholder if neither video nor images
+            _buildNoMediaPlaceholder(),
           
           // Tags
           if (tags.isNotEmpty)
@@ -356,6 +366,39 @@ class _FeedPageState extends State<PostFeedPage> {
           ),
           SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  /// Builds a widget to display a video in the post feed
+  /// Uses the video_player package to play videos from Firebase Storage
+  /// Shows a play button overlay and handles video playback
+  /// The VideoPlayerWidget is created as a separate stateful widget to manage
+  /// individual video player instances (each video needs its own player)
+  Widget _buildVideoSection(String videoUrl) {
+    return VideoPlayerWidget(videoUrl: videoUrl);
+  }
+  
+  /// Builds a placeholder when neither images nor videos are available
+  /// Shows an icon and message indicating no media was uploaded
+  Widget _buildNoMediaPlaceholder() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      height: 200,
+      color: isDark ? const Color.fromARGB(255, 50, 50, 50) : Colors.grey[300],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 60, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            SizedBox(height: 10),
+            Text(
+              'No media available',
+              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -604,6 +647,166 @@ class _ImageCarouselState extends State<ImageCarousel> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// VideoPlayerWidget - Stateful widget to manage video playback
+/// Each video in the feed gets its own VideoPlayerWidget instance
+/// This allows multiple videos to exist on the same screen without conflicts
+class VideoPlayerWidget extends StatefulWidget {
+  /// The URL of the video hosted on Firebase Storage
+  final String videoUrl;
+
+  const VideoPlayerWidget({
+    Key? key,
+    required this.videoUrl,
+  }) : super(key: key);
+
+  @override
+  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+/// State for VideoPlayerWidget
+/// Handles initialization, playback control, and disposal of VideoPlayerController
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  /// Controller that manages the video playback
+  /// Initialized with the video URL from Firebase Storage
+  /// Must be disposed when widget is destroyed to free up resources
+  late VideoPlayerController _videoController;
+  
+  /// Future used to wait for the video to initialize before displaying
+  /// The video player can't display until it knows the video dimensions and duration
+  late Future<void> _initializeVideoFuture;
+  
+  /// Whether the video is currently playing or paused
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the video controller with the Firebase Storage URL
+    // The controller handles network requests and video decoding
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse(widget.videoUrl),
+    );
+    
+    // Initialize the video and store the future for use in UI
+    // This loads video metadata (duration, dimensions, etc)
+    _initializeVideoFuture = _videoController.initialize();
+  }
+
+  @override
+  void dispose() {
+    // IMPORTANT: Always dispose the video controller
+    // This stops playback, releases the video resources, and frees memory
+    // Failure to dispose can lead to memory leaks and app crashes
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      color: isDark ? const Color.fromARGB(255, 50, 50, 50) : Colors.grey[300],
+      height: 400,
+      child: FutureBuilder<void>(
+        // Wait for video initialization before displaying
+        future: _initializeVideoFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // Video is initialized and ready to display
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // The actual video player widget
+                // Displays the video content with aspect ratio preservation
+                VideoPlayer(_videoController),
+                
+                // Play/Pause button overlay
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Toggle between playing and paused
+                      if (_videoController.value.isPlaying) {
+                        _videoController.pause();
+                        _isPlaying = false;
+                      } else {
+                        _videoController.play();
+                        _isPlaying = true;
+                      }
+                    });
+                  },
+                  child: Container(
+                    // Semi-transparent background for button visibility
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(_isPlaying ? 0 : 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(15),
+                    child: Icon(
+                      // Show play icon if paused, pause icon if playing
+                      _isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                  ),
+                ),
+                
+                // Video progress bar at the bottom
+                // Shows current playback position and allows seeking
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: VideoProgressIndicator(
+                    _videoController,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.blue,
+                      bufferedColor: Colors.grey,
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          } else if (snapshot.hasError) {
+            // Show error message if video failed to load
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 60,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Failed to load video',
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            // Show loading indicator while video is initializing
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isDark ? Colors.grey[400]! : Colors.grey[600]!,
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }
