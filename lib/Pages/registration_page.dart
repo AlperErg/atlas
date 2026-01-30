@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:atlas/Widgets/bottom_bar.dart';
 import '../Services/auth_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -79,7 +80,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       if (success) {
         setState(() => _errorMessage = null);
-        widget.onRegistrationComplete();
+        // Navigate to main app
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MyNavigatorBar(title: 'Navigation Bar'),
+            ),
+            (route) => false,
+          );
+        }
       } else {
         setState(() => _errorMessage = 'Failed to update profile. Try again.');
       }

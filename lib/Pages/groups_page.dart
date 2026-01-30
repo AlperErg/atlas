@@ -86,50 +86,28 @@ class _GroupsPageState extends State<GroupsPage> {
                     color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                   ),
                 )
-              : userGroups.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No groups found',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                    )
-                  : GridView.builder(
-                      padding: EdgeInsets.zero,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: userGroups.length + 1, // +1 for "New Map" button
-                      itemBuilder: (context, index) {
-                        // Last item is the "New Map" button
-                        if (index == userGroups.length) {
-                          final user = FirebaseAuth.instance.currentUser;
-                          final currentUserId = user?.uid ?? '';
-                          
-                          return Padding(
-                            padding: const EdgeInsets.all(30),
-                            child: IconButtonWidget(
-                              icon: Icons.add,
-                              onPressed: () async {
-                                final result = await showCreateGroupPopup(context, currentUserId);
-                                if (result == true) {
-                                  // Refresh the groups list after creating a new group
-                                  _loadUserGroups();
-                                }
-                              },
-                              buttonSize: 70,
-                            ),
-                          );
-                        }
-                        // Regular group tiles
-                        final group = userGroups[index];
-                        return _buildGroupTile(group['id'], group['data']);
-                      },
-                    ),
+              : GridView.builder(
+                  padding: EdgeInsets.zero,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: userGroups.isEmpty ? 1 : userGroups.length + 1, // +1 for "Add Group" button
+                  itemBuilder: (context, index) {
+                    // If no groups and this is the only item, show the add group button
+                    if (userGroups.isEmpty) {
+                      return _buildAddGroupButton();
+                    }
+                    // Last item is the "Add Group" button
+                    if (index == userGroups.length) {
+                      return _buildAddGroupButton();
+                    }
+                    // Regular group tiles
+                    final group = userGroups[index];
+                    return _buildGroupTile(group['id'], group['data']);
+                  },
+                ),
             ),
           )
         ],
@@ -289,6 +267,27 @@ class _GroupsPageState extends State<GroupsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Builds the add group button that is always available
+  Widget _buildAddGroupButton() {
+    final user = FirebaseAuth.instance.currentUser;
+    final currentUserId = user?.uid ?? '';
+    
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: IconButtonWidget(
+        icon: Icons.add,
+        onPressed: () async {
+          final result = await showCreateGroupPopup(context, currentUserId);
+          if (result == true) {
+            // Refresh the groups list after creating a new group
+            _loadUserGroups();
+          }
+        },
+        buttonSize: 70,
       ),
     );
   }

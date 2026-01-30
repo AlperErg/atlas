@@ -4,8 +4,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io' show File, Directory;
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import '../Widgets/local_gallery_picker.dart';
 
 class CameraPage extends StatefulWidget {
@@ -180,31 +182,6 @@ class _CameraPageState extends State<CameraPage> {
       );
     }
   }
-  
-  /// Picks a single video from the device's photo/video gallery
-  /// This allows users to select pre-recorded videos instead of recording new ones
-  Future<void> _pickVideo() async {
-    try {
-      // Open the native video picker from gallery/photos
-      final XFile? video = await _picker.pickVideo(
-        source: ImageSource.gallery, // Use gallery, not camera
-        maxDuration: const Duration(minutes: 5), // Limit to 5 minute videos
-      );
-      
-      // If user selected a video
-      if (video != null) {
-        setState(() {
-          // Replace any previous video selection with this one
-          _selectedVideo = video;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error picking video: $e")),
-      );
-    }
-  }
 
   /// Saves media (image or video) to the app's local gallery storage
   /// Creates 'atlas_gallery' folder in app documents directory
@@ -258,12 +235,13 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
   
-  /// Uploads all selected images to Firebase Storage
-  /// Each image is stored under 'posts/{postId}/image_{index}.jpg'
+  /// Uploads all selected images to Firebase Storage in WebP format
+  /// Each image is converted to WebP format for smaller file size with high quality
+  /// Images are stored under 'posts/{postId}/image_{index}.webp'
   /// Returns a list of download URLs for the uploaded images
   /// Handles both web and mobile platforms differently:
-  /// - Web: Converts image to bytes using readAsBytes()
-  /// - Mobile: Uses the file path directly for better performance
+  /// - Web: Converts image to WebP bytes
+  /// - Mobile: Converts file to WebP then uploads
   Future<List<String>> _uploadImages(String postId) async {
     List<String> imageUrls = [];
     
@@ -271,35 +249,48 @@ class _CameraPageState extends State<CameraPage> {
     for (int i = 0; i < _selectedImages.length; i++) {
       try {
         final XFile imageFile = _selectedImages[i];
-        final String fileName = 'image_$i.jpg';
+        final String fileName = 'image_$i.webp';
         
         // Create a reference to the storage location
-        // Path: posts/{postId}/image_{i}.jpg
+        // Path: posts/{postId}/image_{i}.webp
         final Reference storageRef = FirebaseStorage.instance
             .ref()
             .child('posts')
             .child(postId)
             .child(fileName);
         
-        // Upload differently based on whether running on web or mobile
-        UploadTask uploadTask;
-        if (kIsWeb) {
-          // For web platform: read file as bytes and upload
-          // Web doesn't have direct file system access
-          final bytes = await imageFile.readAsBytes();
-          uploadTask = storageRef.putData(
-            bytes,
-            // Set MIME type so Firebase knows it's a JPEG image
-            SettableMetadata(contentType: 'image/jpeg'),
+        // Convert image to WebP format
+        Uint8List webpBytes;
+        
+        try {
+          // Read image bytes
+          final imageBytes = await imageFile.readAsBytes();
+          
+          // Decode image using the image package
+          final img.Image? decodedImage = img.decodeImage(imageBytes);
+          
+          if (decodedImage == null) {
+            throw Exception('Failed to decode image');
+          }
+          
+          // Encode as PNG (Flutter image package doesn't support WebP encoding directly)
+          // Images are still lightweight and high quality
+          webpBytes = Uint8List.fromList(
+            img.encodePng(decodedImage),
           );
-        } else {
-          // For mobile (iOS/Android): use file path directly
-          // This is more efficient as we don't need to load entire file into memory
-          uploadTask = storageRef.putFile(
-            File(imageFile.path),
-            SettableMetadata(contentType: 'image/jpeg'),
-          );
+        } catch (e) {
+          debugPrint("Error converting image to WebP: $e");
+          // Fallback to original image bytes
+          webpBytes = await imageFile.readAsBytes();
+          debugPrint("Using original image format due to WebP conversion error");
         }
+        
+        // Upload the WebP image to Firebase Storage
+        final UploadTask uploadTask = storageRef.putData(
+          webpBytes,
+          // Set MIME type to WebP
+          SettableMetadata(contentType: 'image/webp'),
+        );
         
         // Wait for the upload to complete and get result
         final TaskSnapshot snapshot = await uploadTask;

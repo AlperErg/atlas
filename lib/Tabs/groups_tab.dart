@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../Pages/groups_page.dart';
+import '../Pages/login_page.dart';
 import '../PopUps/map_menu_popup.dart';
 import '../Widgets/profile_header.dart';
 import '../Widgets/dropdown_menu.dart';
@@ -10,6 +12,7 @@ import '../PopUps/dropdown_popups/edit_profile.dart';
 import '../PopUps/dropdown_popups/settings.dart';
 import '../Map_And_Bubbles/user_map_page.dart';
 import '../PopUps/edit/filter_groups_popup.dart';
+import '../Services/auth_provider.dart' as auth_provider;
 
 class GroupsTab extends StatefulWidget {
   final void Function(List<String>)? onCaptureBubbles;
@@ -52,6 +55,10 @@ class _GroupsTabState extends State<GroupsTab> {
     );
     
     _dropdownController?.toggle();
+  }
+
+  static void _emptyCallback() {
+    // Empty callback for LoginScreen navigation
   }
 
   Future<void> _loadUsername() async {
@@ -174,23 +181,35 @@ class _GroupsTabState extends State<GroupsTab> {
               DropdownMenuItemData(
                 label: 'Logout',
                 icon: Icons.logout,
-                onTap: () => showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) => AlertDialog(
-                    title: const Text('Log out'),
-                    content: const Text('Are you sure you want to log out?'),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, 'OK'),
-                        child: const Text('OK'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, 'Cancel'),
-                        child: const Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ),
+                onTap: () async {
+                  final result = await showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: const Text('Log out'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, 'OK'),
+                          child: const Text('OK'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, 'Cancel'),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  if (result == 'OK' && mounted) {
+                    await context.read<auth_provider.AuthProvider>().signOut();
+                    if (mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const LoginScreen(onLoginSuccess: _emptyCallback)),
+                        (route) => false,
+                      );
+                    }
+                  }
+                },
               ),
             ]),
           ),

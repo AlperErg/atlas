@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -440,41 +441,72 @@ class _FeedPageState extends State<PostFeedPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color.fromARGB(255, 50, 50, 50) : Colors.grey[300];
     
-    return Container(
-      height: 400, // FIXED HEIGHT
-      color: bgColor,
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.contain,
-        width: double.infinity,
-        maxHeightDiskCache: 400,
-        maxWidthDiskCache: 400,
-        memCacheHeight: 300,
-        memCacheWidth: 300,
-        placeholder: (context, url) => Container(
+    return FutureBuilder<Size?>(
+      future: _getImageDimensions(imageUrl),
+      builder: (context, snapshot) {
+        // Default height if dimensions can't be determined
+        double containerHeight = 400;
+        
+        if (snapshot.hasData && snapshot.data != null) {
+          // Calculate height based on actual image dimensions while maintaining aspect ratio
+          // Max width is constrained by screen width
+          final maxWidth = MediaQuery.of(context).size.width;
+          final aspectRatio = snapshot.data!.width / snapshot.data!.height;
+          containerHeight = (maxWidth / aspectRatio).clamp(200.0, 600.0);
+        }
+        
+        return Container(
+          height: containerHeight,
           color: bgColor,
-          child: Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-        errorWidget: (context, url, error) => Container(
-          color: bgColor,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.broken_image, size: 60, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                SizedBox(height: 10),
-                Text(
-                  'Failed to load image',
-                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            fit: BoxFit.contain,
+            width: double.infinity,
+            placeholder: (context, url) => Container(
+              color: bgColor,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: bgColor,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, size: 60, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    SizedBox(height: 10),
+                    Text(
+                      'Failed to load image',
+                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+  
+  /// Get image dimensions from URL
+  Future<Size?> _getImageDimensions(String imageUrl) async {
+    try {
+      final image = NetworkImage(imageUrl);
+      final completer = Completer<Size>();
+      image.resolve(const ImageConfiguration()).addListener(
+        ImageStreamListener((image, synchronousCall) {
+          final myImage = image.image;
+          Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
+          completer.complete(size);
+        }),
+      );
+      return completer.future;
+    } catch (e) {
+      debugPrint('Error getting image dimensions: $e');
+      return null;
+    }
   }
 
   Widget _buildImageCarousel(List<dynamic> imageUrls) {
@@ -536,11 +568,49 @@ class ImageCarousel extends StatefulWidget {
 class _ImageCarouselState extends State<ImageCarousel> {
   late PageController _pageController;
   int _currentPage = 0;
+  late List<Size?> _imageDimensions;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    // Preload all image dimensions
+    _imageDimensions = List.filled(widget.imageUrls.length, null);
+    _preloadImageDimensions();
+  }
+
+  Future<void> _preloadImageDimensions() async {
+    for (int i = 0; i < widget.imageUrls.length; i++) {
+      try {
+        final dimensions = await _getImageDimensions(widget.imageUrls[i].toString());
+        if (mounted) {
+          setState(() {
+            _imageDimensions[i] = dimensions;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading image dimensions for image $i: $e');
+      }
+    }
+  }
+
+  Future<Size?> _getImageDimensions(String imageUrl) async {
+    try {
+      final image = NetworkImage(imageUrl);
+      final completer = Completer<Size>();
+      image.resolve(const ImageConfiguration()).addListener(
+        ImageStreamListener((image, synchronousCall) {
+          final myImage = image.image;
+          Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
+          if (!completer.isCompleted) {
+            completer.complete(size);
+          }
+        }),
+      );
+      return completer.future;
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
@@ -554,8 +624,19 @@ class _ImageCarouselState extends State<ImageCarousel> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color.fromARGB(255, 50, 50, 50) : Colors.grey[300];
     
-    return Container(
-      height: 400, // FIXED HEIGHT - No dynamic calculation
+    // Get dimensions of current image
+    Size? currentDimensions = _imageDimensions[_currentPage];
+    double containerHeight = 400;
+    
+    if (currentDimensions != null) {
+      final maxWidth = MediaQuery.of(context).size.width;
+      final aspectRatio = currentDimensions.width / currentDimensions.height;
+      containerHeight = (maxWidth / aspectRatio).clamp(200.0, 600.0);
+    }
+    
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: containerHeight,
       color: bgColor,
       child: Stack(
         children: [
@@ -572,13 +653,9 @@ class _ImageCarouselState extends State<ImageCarousel> {
               return CachedNetworkImage(
                 imageUrl: widget.imageUrls[index].toString(),
                 fit: BoxFit.contain,
-                maxHeightDiskCache: 400,
-                maxWidthDiskCache: 400,
-                memCacheHeight: 300,
-                memCacheWidth: 300,
                 placeholder: (context, url) => Container(
                   color: bgColor,
-                  child: Center(
+                  child: const Center(
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
@@ -589,7 +666,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.broken_image, size: 60, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
                           'Failed to load image',
                           style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
@@ -612,7 +689,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
               children: List.generate(
                 widget.imageUrls.length,
                 (index) => Container(
-                  margin: EdgeInsets.symmetric(horizontal: 3),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
@@ -631,14 +708,14 @@ class _ImageCarouselState extends State<ImageCarousel> {
             top: 10,
             right: 10,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${_currentPage + 1}/${widget.imageUrls.length}',
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
