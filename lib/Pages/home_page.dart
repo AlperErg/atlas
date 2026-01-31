@@ -4,7 +4,9 @@ import '../Map_And_Bubbles/map_logic.dart';
 import '../Map_And_Bubbles/bubble_data.dart';
 import '../Map_And_Bubbles/label_data.dart';
 import '../Map_And_Bubbles/bubble_simulation.dart';
+import '../Widgets/command_wheel.dart';
 import 'dart:async';
+import 'dart:math' as math;
 
 class HomePage extends StatefulWidget {
   final String title;
@@ -41,6 +43,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _isLoadingLabels = true;
   
   late AnimationController _screenshotController;
+  Offset? _commandWheelPosition;
+  Offset? _commandWheelDragPosition;
 
   @override
   void initState() {
@@ -240,6 +244,26 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     print('Captured ${visiblePostIds.length} post IDs: $visiblePostIds');
   }
 
+  void _showCommandWheel(Offset position) {
+    setState(() {
+      _commandWheelPosition = position;
+      _commandWheelDragPosition = position;
+    });
+  }
+
+  void _updateCommandWheelDrag(Offset position) {
+    setState(() {
+      _commandWheelDragPosition = position;
+    });
+  }
+
+  void _hideCommandWheel() {
+    setState(() {
+      _commandWheelPosition = null;
+      _commandWheelDragPosition = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     const tileSize = 400.0;
@@ -269,6 +293,46 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Scaffold(
       body: GestureDetector(
         onDoubleTap: _captureVisibleBubbles,
+        onLongPressStart: (details) {
+          _showCommandWheel(details.globalPosition);
+        },
+        onLongPressMoveUpdate: (details) {
+          _updateCommandWheelDrag(details.globalPosition);
+        },
+        onLongPressEnd: (_) {
+          // Execute the selected command if one is selected
+          if (_commandWheelPosition != null && _commandWheelDragPosition != null) {
+            final wheelCenter = Offset(
+              _commandWheelPosition!.dx,
+              _commandWheelPosition!.dy,
+            );
+
+            final dx = _commandWheelDragPosition!.dx - wheelCenter.dx;
+            final dy = _commandWheelDragPosition!.dy - wheelCenter.dy;
+            final distance = math.sqrt(dx * dx + dy * dy);
+            final radius = 120.0;
+
+            // Check if within the wheel radius
+            if (distance >= radius * 0.25 && distance <= radius * 1.4) {
+              var angle = math.atan2(dy, dx);
+              angle = (angle * 180 / math.pi) + 90;
+              if (angle < 0) angle += 360;
+
+              final itemCount = 4; // Your command count
+              final itemAngle = 360 / itemCount;
+              final index = (angle / itemAngle).floor() % itemCount;
+
+              // Find and execute the selected command
+              final items = [
+                'Edit', 'Delete', 'Share', 'Like'
+              ];
+              if (index >= 0 && index < items.length) {
+                print(items[index]);
+              }
+            }
+          }
+          _hideCommandWheel();
+        },
         child: Stack(
           children: [
             TiledMapViewer(
@@ -309,6 +373,57 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Center(
                 child: CircularProgressIndicator(
                   color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                ),
+              ),
+            // Command wheel overlay
+            if (_commandWheelPosition != null)
+              Positioned(
+                left: _commandWheelPosition!.dx - 150,
+                top: _commandWheelPosition!.dy - 150,
+                child: Container(
+                  color: Colors.transparent,
+                  width: 300,
+                  height: 300,
+                  child: CommandWheel(
+                    items: [
+                      CommandWheelItem(
+                        icon: Icons.edit,
+                        label: 'Edit',
+                        backgroundColor: Colors.blue.withOpacity(0.7),
+                        onSelected: () {
+                          print('Edit');
+                          _hideCommandWheel();
+                        },
+                      ),
+                      CommandWheelItem(
+                        icon: Icons.compare_arrows,
+                        label: 'Attract',
+                        backgroundColor: Colors.red.withOpacity(0.7),
+                        onSelected: () {
+                          print('Attract');
+                          _hideCommandWheel();
+                        },
+                      ),
+                      CommandWheelItem(
+                        icon: Icons.refresh,
+                        label: 'Refresh',
+                        backgroundColor: Colors.pink.withOpacity(0.7),
+                        onSelected: () {
+                          print('Refresh');
+                          _hideCommandWheel();
+                        },
+                      ),
+                    ],
+                    dragPosition: _commandWheelDragPosition != null
+                        ? Offset(
+                            _commandWheelDragPosition!.dx - _commandWheelPosition!.dx + 150,
+                            _commandWheelDragPosition!.dy - _commandWheelPosition!.dy + 150,
+                          )
+                        : null,
+                    radius: 120,
+                    iconSize: 32,
+                    centerColor: Colors.blue,
+                  ),
                 ),
               ),
           ],
