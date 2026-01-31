@@ -42,8 +42,8 @@ class _MapMenuPopUpContentState extends State<MapMenuPopUpContent> {
         final data = doc.data() as Map<String, dynamic>?;
         setState(() {
           if (data != null) {
-            // Get username
-            _username = data['username'] ?? data['name'] ?? data['displayName'] ?? 'Unknown User';
+            // Get username from Firestore only
+            _username = data['username'] ?? 'Unknown User';
             
             // Get userID
             _userID = data['userID'] ?? data['ID'] ?? data['UserID'] ?? 'No ID';

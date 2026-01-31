@@ -78,8 +78,8 @@ class _CameraPageState extends State<CameraPage> {
           setState(() {
             // Set the user ID field to the Firebase Auth UID
             _userIDController.text = user.uid;
-            // Set username from Firestore, with fallback to Firebase displayName or email
-            _usernameController.text = userData?['username'] ?? user.displayName ?? user.email ?? '';
+            // Set username from Firestore only (no fallbacks to auth fields)
+            _usernameController.text = userData?['username'] ?? 'User';
             // Finished loading, show the form
             _isLoadingUserData = false;
           });

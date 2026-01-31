@@ -83,7 +83,7 @@ class _GroupsTabState extends State<GroupsTab> {
           String userIdFromFirestore = 'Unknown User';
 
           if (data is Map<String, dynamic>) {
-            final usernameFromFirestore = data['username'] ?? data['name'] ?? data['displayName'];
+            final usernameFromFirestore = data['username'];
             if (usernameFromFirestore is String && usernameFromFirestore.isNotEmpty) {
               username = usernameFromFirestore;
             }

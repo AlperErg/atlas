@@ -86,7 +86,7 @@ class _HomeTabState extends State<HomeTab> {
           String userIdFromFirestore = 'Unknown User';
 
           if (data is Map<String, dynamic>) {
-            final usernameFromFirestore = data['username'] ?? data['name'] ?? data['displayName'];
+            final usernameFromFirestore = data['username'];
             if (usernameFromFirestore is String && usernameFromFirestore.isNotEmpty) {
               username = usernameFromFirestore;
             }
@@ -291,13 +291,10 @@ class _HomeTabState extends State<HomeTab> {
                   );
                   
                   if (result == 'OK' && mounted) {
+                    // Just call signOut() - AuthProvider state change will automatically
+                    // trigger rebuild in main.dart which will show LoginScreen
                     await context.read<auth_provider.AuthProvider>().signOut();
-                    if (mounted) {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const LoginScreen(onLoginSuccess: _emptyCallback)),
-                        (route) => false,
-                      );
-                    }
+                    // No manual navigation needed - the state change handles it
                   }
                 },
               ),

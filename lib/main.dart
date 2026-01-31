@@ -4,6 +4,8 @@ make sure what you have changed has been saved then run
 flutter clean
 flutter run -d chrome
 
+
+flutter pub get
 */
 
 import 'package:atlas/Pages/login_page.dart';
